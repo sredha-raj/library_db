@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Shelves & Physical Copies | Nalanda Library{% endblock %}
+{% block title %}Shelves &amp; Physical Copies | Nalanda Central Library{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
   <div>
-    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.03em;">Inventory: Shelves & Copies (shelf & book_copy)</h1>
-    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Track physical volume locations across library floors and sections, and maintain book copy condition status.</p>
+    <h1 style="font-family: var(--font-serif-heading); font-size: 2.2rem; font-weight: 700; color: var(--maroon);">Inventory: Shelves &amp; Copies</h1>
+    <p style="font-size: 0.96rem; color: var(--text-muted); margin-top: 4px;">Track physical volume locations across library floors and sections, and maintain book copy condition status.</p>
   </div>
   <div style="display: flex; gap: 10px;">
     <button class="btn btn-secondary" onclick="openModal('addShelfModal')">
@@ -18,26 +18,27 @@
 </div>
 
 <!-- Shelves Card Grid -->
-<div style="margin-bottom: 36px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="font-size: 1.25rem; color: var(--text-main); font-weight: 800;">Library Shelves ({{ shelves|length }})</h3>
+<div style="margin-bottom: 32px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+    <h3 style="font-family: var(--font-serif-heading); font-size: 1.4rem; color: var(--maroon); font-weight: 700;">Library Shelves ({{ shelves|length }})</h3>
   </div>
-  <div class="lumio-stats-grid">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
     {% for s in shelves %}
-      <div class="lumio-stat-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span class="badge badge-tag">{{ s.floor }}</span>
-          <form action="{{ url_for('delete_shelf', shelf_id=s.shelf_id) }}" method="POST" onsubmit="return confirm('Delete shelf?');" style="display:inline;">
-            <button type="submit" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem;">✕</button>
+      <div class="card-cream" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span class="tag-tan">{{ s.floor }}</span>
+          <form action="{{ url_for('delete_shelf', shelf_id=s.shelf_id) }}" method="POST"
+                onsubmit="return confirm('Delete shelf {{ s.section }}?');" style="display:inline;">
+            <button type="submit" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; line-height: 1;" title="Delete Shelf">&times;</button>
           </form>
         </div>
-        <h4 style="font-size: 1.15rem; color: var(--text-main); font-weight: 800; margin-bottom: 6px;">{{ s.section }}</h4>
-        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-          <strong>{{ s.total_copies }}</strong> copies total &bull; <span style="color: #059669; font-weight: 600;">{{ s.available_copies }} available</span>
+        <h4 style="font-family: var(--font-serif-heading); font-size: 1.25rem; color: var(--text-main); font-weight: 700; margin-bottom: 4px;">{{ s.section }}</h4>
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
+          <strong>{{ s.total_copies }}</strong> copies total &bull; <span style="color: var(--forest-green); font-weight: 600;">{{ s.available_copies }} available</span>
         </div>
         <div>
           <a href="{{ url_for('inventory', shelf_id=s.shelf_id) }}" class="btn btn-secondary btn-sm" style="width: 100%; text-align: center;">
-            Filter Copies
+            Filter Copies &rarr;
           </a>
         </div>
       </div>
@@ -46,69 +47,75 @@
 </div>
 
 <!-- Copies Table -->
-<div class="lumio-card">
-  <div class="lumio-card-header">
-    <h3>
-      Physical Copies Master Table (book_copy)
+<div class="card-cream">
+  <div class="card-header-bar">
+    <div class="card-title">
+      Physical Copies Master Ledger (book_copy)
       {% if selected_shelf %}
-        <span style="font-size: 0.82rem; font-weight: normal; color: var(--primary); margin-left: 8px;">(Filtered by Shelf #{{ selected_shelf }})</span>
+        <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted); margin-left: 8px;">(Filtered by Shelf #{{ selected_shelf }})</span>
       {% endif %}
-    </h3>
+    </div>
     {% if selected_shelf %}
       <a href="{{ url_for('inventory') }}" class="btn btn-secondary btn-sm">Clear Filter</a>
     {% endif %}
   </div>
-  <div style="padding: 0; overflow-x: auto;">
-    <table class="lumio-table">
+  <div style="overflow-x: auto;">
+    <table class="data-table">
       <thead>
         <tr>
-          <th>Copy ID</th>
+          <th style="width: 70px;">Copy ID</th>
           <th>Book Title</th>
-          <th>Shelf (floor & section)</th>
+          <th>Location (Shelf)</th>
           <th>Status</th>
-          <th>Managing Staff (manages)</th>
-          <th>Actions</th>
+          <th>Managing Custodians</th>
+          <th style="text-align: right; width: 140px;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for c in copies %}
           <tr>
-            <td><strong>#{{ c.copy_id }}</strong></td>
+            <td><strong>#{{ "%03d"|format(c.copy_id) }}</strong></td>
             <td>
-              <a href="{{ url_for('book_detail', book_id=c.book_id) }}" style="font-weight: 700; color: var(--text-main);">
+              <a href="{{ url_for('book_detail', book_id=c.book_id) }}" style="font-family: var(--font-serif-heading); font-size: 1.15rem; font-weight: 700; color: var(--maroon);">
                 {{ c.title }}
               </a>
-              <div style="font-size: 0.72rem; color: var(--text-dim);">ISBN: {{ c.ISBN or 'None' }}</div>
+              {% if c.ISBN %}
+                <div style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-muted);">ISBN: {{ c.ISBN }}</div>
+              {% endif %}
             </td>
             <td>
               {% if c.floor %}
-                <strong>{{ c.floor }}</strong> &bull; <span style="color: var(--text-body);">{{ c.section }}</span>
+                <span>{{ c.floor }} &bull; {{ c.section }}</span>
               {% else %}
-                <span style="color: var(--text-dim);">Unassigned</span>
+                <span style="color: var(--text-dim);">Unassigned Shelf</span>
               {% endif %}
             </td>
             <td>
               {% if c.status == 'Available' %}
-                <span class="badge badge-available">Available</span>
+                <span class="tag-green">Available</span>
               {% elif c.status == 'Borrowed' %}
-                <span class="badge badge-borrowed">Borrowed</span>
+                <span class="tag-gold">Borrowed</span>
+              {% elif c.status == 'Maintenance' %}
+                <span class="tag-pink">Maintenance</span>
               {% else %}
-                <span class="badge badge-returned">{{ c.status }}</span>
+                <span class="tag-tan">{{ c.status }}</span>
               {% endif %}
             </td>
             <td>
               {% if c.managers %}
-                <span style="color: var(--primary); font-weight: 600;">{{ c.managers }}</span>
+                <span style="font-size: 0.88rem; color: var(--text-body);">{{ c.managers }}</span>
               {% else %}
-                <span style="color: var(--text-dim);">Unassigned</span>
+                <span style="color: var(--text-dim); font-size: 0.84rem;">None assigned</span>
               {% endif %}
             </td>
-            <td>
-              <div style="display: flex; gap: 6px;">
-                <button class="btn btn-secondary btn-sm" onclick="openEditCopyModal('{{ c.copy_id }}', '{{ c.shelf_id or '' }}', '{{ c.status }}', '{{ c.manager_ids or '' }}')">
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 6px;">
+                <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="openEditCopyModal('{{ c.copy_id }}', '{{ c.title|replace('\'', '\\\'') }}', '{{ c.shelf_id or '' }}', '{{ c.status }}', '{{ c.manager_ids or '' }}')">
                   Edit
                 </button>
-                <form action="{{ url_for('delete_copy', copy_id=c.copy_id) }}" method="POST" onsubmit="return confirm('Delete copy #{{ c.copy_id }}?');" style="display:inline;">
+                <form action="{{ url_for('delete_copy', copy_id=c.copy_id) }}" method="POST"
+                      onsubmit="return confirm('Delete copy #{{ c.copy_id }} of {{ c.title }}?');" style="display:inline;">
                   <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                 </form>
               </div>
@@ -116,8 +123,8 @@
           </tr>
         {% else %}
           <tr>
-            <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 36px;">
-              No copies found in inventory.
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              No copies found for this view.
             </td>
           </tr>
         {% endfor %}
@@ -130,18 +137,18 @@
 <div class="modal-overlay" id="addShelfModal">
   <div class="modal-window">
     <div class="modal-header">
-      <h3>Add New Library Shelf</h3>
-      <button class="modal-close-btn" onclick="closeModal('addShelfModal')">✕</button>
+      <h3>Add New Physical Shelf</h3>
+      <button class="modal-close-btn" onclick="closeModal('addShelfModal')" title="Close">&times;</button>
     </div>
     <form action="{{ url_for('add_shelf') }}" method="POST">
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Floor *</label>
-          <input type="text" name="floor" class="form-control" placeholder="e.g. Ground Floor, 1st Floor, Mezzanine" required>
+          <label class="form-label">FLOOR DESIGNATION *</label>
+          <input type="text" name="floor" class="form-control" placeholder="e.g. 1st Floor - Archival Wing" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Section Name / Category *</label>
-          <input type="text" name="section" class="form-control" placeholder="e.g. Section G - Sanskrit & Vedic Heritage" required>
+          <label class="form-label">SECTION / BAY *</label>
+          <input type="text" name="section" class="form-control" placeholder="e.g. Classical Sanskrit & Vedic Texts (Bay A3)" required>
         </div>
       </div>
       <div class="modal-footer">
@@ -156,45 +163,46 @@
 <div class="modal-overlay" id="addCopyGlobalModal">
   <div class="modal-window">
     <div class="modal-header">
-      <h3>Add Copy to Inventory</h3>
-      <button class="modal-close-btn" onclick="closeModal('addCopyGlobalModal')">✕</button>
+      <h3>Add Physical Copy to Collection</h3>
+      <button class="modal-close-btn" onclick="closeModal('addCopyGlobalModal')" title="Close">&times;</button>
     </div>
     <form action="{{ url_for('add_copy') }}" method="POST">
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Book Title *</label>
+          <label class="form-label">SELECT BOOK TITLE *</label>
           <select name="book_id" class="form-control" required>
-            <option value="">-- Choose Book Title --</option>
-            {% for b in books %}
-              <option value="{{ b.book_id }}">{{ b.title }}</option>
+            <option value="">-- Choose Book --</option>
+            {% for b in all_books %}
+              <option value="{{ b.book_id }}">{{ b.title }} (ID: #{{ b.book_id }})</option>
             {% endfor %}
           </select>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Shelf Location</label>
+            <label class="form-label">SHELF LOCATION</label>
             <select name="shelf_id" class="form-control">
-              <option value="">-- Select Shelf --</option>
+              <option value="">-- Choose Shelf --</option>
               {% for s in shelves %}
                 <option value="{{ s.shelf_id }}">{{ s.floor }} - {{ s.section }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Status</label>
+            <label class="form-label">STATUS</label>
             <select name="status" class="form-control">
-              <option value="Available" selected>Available</option>
+              <option value="Available">Available</option>
+              <option value="Borrowed">Borrowed</option>
               <option value="Maintenance">Maintenance</option>
-              <option value="Reserved">Reserved</option>
+              <option value="Lost">Lost</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Managing Librarian (manages)</label>
+          <label class="form-label">ASSIGNED CUSTODIAN (LIBRARIAN)</label>
           <select name="librarian_id" class="form-control">
-            <option value="">-- Assign Librarian --</option>
+            <option value="">-- None Assigned --</option>
             {% for l in librarians %}
               <option value="{{ l.librarian_id }}">{{ l.name }}</option>
             {% endfor %}
@@ -213,37 +221,41 @@
 <div class="modal-overlay" id="editCopyModal">
   <div class="modal-window">
     <div class="modal-header">
-      <h3>Edit Copy Details</h3>
-      <button class="modal-close-btn" onclick="closeModal('editCopyModal')">✕</button>
+      <h3>Edit Copy Condition &amp; Custody</h3>
+      <button class="modal-close-btn" onclick="closeModal('editCopyModal')" title="Close">&times;</button>
     </div>
     <form id="editCopyForm" method="POST">
       <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Shelf Location</label>
-          <select name="shelf_id" id="editCopyShelf" class="form-control">
-            <option value="">-- None / Unshelved --</option>
-            {% for s in shelves %}
-              <option value="{{ s.shelf_id }}">{{ s.floor }} - {{ s.section }}</option>
-            {% endfor %}
-          </select>
+        <div style="font-family: var(--font-serif-heading); font-size: 1.25rem; font-weight: 700; color: var(--maroon); margin-bottom: 16px;" id="editCopyBookTitle">
+          Copy Details
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">SHELF</label>
+            <select name="shelf_id" id="editCopyShelf" class="form-control">
+              <option value="">-- Select Shelf --</option>
+              {% for s in shelves %}
+                <option value="{{ s.shelf_id }}">{{ s.floor }} - {{ s.section }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">STATUS</label>
+            <select name="status" id="editCopyStatus" class="form-control">
+              <option value="Available">Available</option>
+              <option value="Borrowed">Borrowed</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Lost">Lost</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Status</label>
-          <select name="status" id="editCopyStatus" class="form-control">
-            <option value="Available">Available</option>
-            <option value="Borrowed">Borrowed</option>
-            <option value="Maintenance">Maintenance</option>
-            <option value="Lost">Lost</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Assigned Managing Staff (manages)</label>
-          <div style="max-height: 140px; overflow-y: auto; background: var(--bg-subtle); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 10px;">
+          <label class="form-label">ASSIGNED LIBRARIANS</label>
+          <div style="max-height: 120px; overflow-y: auto; background: var(--bg-card-alt); border: 1px solid var(--border-tan); border-radius: var(--radius-xs); padding: 10px;">
             {% for l in librarians %}
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; margin-bottom: 6px; cursor: pointer;">
-                <input type="checkbox" name="librarian_ids" value="{{ l.librarian_id }}" class="lib-checkbox">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; margin-bottom: 6px; cursor: pointer;">
+                <input type="checkbox" name="librarian_ids" value="{{ l.librarian_id }}" class="edit-copy-lib-cb" id="libCb{{ l.librarian_id }}">
                 <span>{{ l.name }}</span>
               </label>
             {% endfor %}
@@ -261,14 +273,20 @@
 
 {% block scripts %}
 <script>
-  window.openEditCopyModal = function(copyId, shelfId, status, managerIds) {
-    document.getElementById('editCopyForm').action = `/inventory/copy/${copyId}/edit`;
-    document.getElementById('editCopyShelf').value = shelfId;
-    document.getElementById('editCopyStatus').value = status;
+  window.openEditCopyModal = function(copyId, title, shelfId, status, managerIdsStr) {
+    const form = document.getElementById('editCopyForm');
+    const titleEl = document.getElementById('editCopyBookTitle');
+    const shelfEl = document.getElementById('editCopyShelf');
+    const statusEl = document.getElementById('editCopyStatus');
 
-    const ids = managerIds ? managerIds.split(',') : [];
-    document.querySelectorAll('.lib-checkbox').forEach(cb => {
-      cb.checked = ids.includes(cb.value);
+    if (form) form.action = `/inventory/copy/${copyId}/edit`;
+    if (titleEl) titleEl.textContent = `Copy #${copyId} · ${title}`;
+    if (shelfEl) shelfEl.value = shelfId || '';
+    if (statusEl) statusEl.value = status || 'Available';
+
+    const mgrs = managerIdsStr ? managerIdsStr.split(',').map(s => s.trim()) : [];
+    document.querySelectorAll('.edit-copy-lib-cb').forEach(cb => {
+      cb.checked = mgrs.includes(cb.value);
     });
 
     openModal('editCopyModal');

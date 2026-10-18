@@ -36,10 +36,12 @@ class LibraryAppTest(unittest.TestCase):
         print("SQL API Test -> OK", data)
 
     def test_circulation_issue_and_return(self):
+        import time
         # Add a temporary member
         mid = db.add_member("Test Patron", "123 Test St", "555-9999", "test@test.com")
         # Add a test book with 1 copy
-        bid = db.add_book("Test Automated Book", "999-9999999999", "1st", 2024, None, None, [], copy_count=1)
+        test_isbn = f"999-{int(time.time()*1000)}"
+        bid = db.add_book("Test Automated Book", test_isbn, "1st", 2024, None, None, [], copy_count=1)
         avail = db.get_available_copies()
         test_copy = [c for c in avail if c['book_id'] == bid][0]
 
@@ -62,6 +64,11 @@ class LibraryAppTest(unittest.TestCase):
         book_after = db.get_book_by_id(bid)
         copy_status_after = [c['status'] for c in book_after['copies'] if c['copy_id'] == test_copy['copy_id']][0]
         self.assertEqual(copy_status_after, 'Available')
+        
+        # Cleanup test records
+        db.delete_borrow(b_rec['borrow_id'])
+        db.delete_book(bid)
+        db.delete_member(mid)
         print("Circulation Issue & Return cycle -> OK")
 
 if __name__ == '__main__':

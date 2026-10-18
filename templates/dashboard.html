@@ -1,216 +1,143 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard | Nalanda Library{% endblock %}
+{% block title %}Dashboard | Nalanda Central Library{% endblock %}
 
 {% block content %}
-<!-- Lumio Signature Hero Section -->
-<section class="lumio-hero-section">
-  <div class="hero-top-row">
-    <div class="hero-geometry-art">
-      <div class="geo-circle"></div>
-      <div class="geo-circle"></div>
-      <div class="geo-line"></div>
-    </div>
-    <div class="hero-big-title-1">Welcome to</div>
-    <div class="hero-avatars-box">
-      <div class="avatar-stack">
-        <div class="avatar-stack-item">AS</div>
-        <div class="avatar-stack-item" style="background: #fed7aa; color: #9a3412;">AI</div>
-        <div class="avatar-stack-item" style="background: #bbf7d0; color: #166534;">RV</div>
-        <div class="avatar-stack-item avatar-stack-plus">+</div>
-      </div>
-      <div class="avatar-caption">
-        <strong>{{ stats.total_members }}+</strong><br>
-        Active Patrons
-      </div>
-    </div>
+<!-- Green Banner Introducing the System -->
+<section class="banner-system-intro">
+  <div class="banner-supertitle">Established 1958 • Archival Repository &amp; Public Lending</div>
+  <h1 class="banner-title">Welcome to Nalanda Central Library</h1>
+  <p class="banner-subtitle">
+    Preserving Indian classical literature, historical treatises, and scientific research. Managing catalog records, physical shelf inventory, and circulation loans.
+  </p>
+</section>
+
+<!-- 4 Number Cards -->
+<section class="stats-grid-four">
+  <div class="stat-number-card">
+    <div class="stat-headline">{{ stats.total_titles }} titles</div>
+    <div class="stat-sublabel">Catalog Titles</div>
   </div>
 
-  <div class="hero-pill-row">
-    <div class="lumio-pill-box">
-      <div class="hero-big-title-2">Nalanda Central</div>
-    </div>
+  <div class="stat-number-card">
+    <div class="stat-headline">{{ stats.available_copies }} / {{ stats.total_copies }}</div>
+    <div class="stat-sublabel">Available Copies</div>
   </div>
 
-  <div class="hero-bottom-row">
-    <div class="hero-description">
-      An Indian national knowledge repository and public catalog managing historical manuscripts, classical literature, and active circulating volumes with full SQLite3 relational integrity.
-    </div>
-    <div class="hero-big-title-3">
-      Library
-      <svg class="hero-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <line x1="7" y1="7" x2="17" y2="17"></line>
-        <polyline points="17 7 17 17 7 17"></polyline>
-      </svg>
-    </div>
+  <div class="stat-number-card">
+    <div class="stat-headline">{{ stats.active_borrows }} active</div>
+    <div class="stat-sublabel">Circulation Loans</div>
+  </div>
+
+  <div class="stat-number-card">
+    <div class="stat-headline">{{ stats.total_members }} members</div>
+    <div class="stat-sublabel">Registered Patrons</div>
   </div>
 </section>
 
-<!-- Lumio Blue Highlights Banner -->
-<div class="lumio-blue-banner">
-  <div class="blue-banner-card">
-    <div class="blue-banner-title">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      SEAMLESS CIRCULATION
-    </div>
-    <div class="blue-banner-text">
-      Issue copies in one click with automated 14-day due date computation and dynamic ₹5.00/day late fee calculation.
-    </div>
+<!-- Recent Circulation Activity Ledger -->
+<section class="card-cream">
+  <div class="card-header-bar">
+    <div class="card-title">Recent Circulation Activity</div>
+    <a href="{{ url_for('circulation') }}" class="section-link">
+      View All Borrows &rarr;
+    </a>
   </div>
 
-  <div class="blue-banner-card">
-    <div class="blue-banner-title">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-      </svg>
-      11-TABLE RELATIONAL INTEGRITY
-    </div>
-    <div class="blue-banner-text">
-      Strict foreign key relationships with cascade triggers, composite primary keys, and live SQL Query Console.
-    </div>
-  </div>
-
-  <div class="blue-banner-card">
-    <div class="blue-banner-title">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-      </svg>
-      INDIAN LITERARY HERITAGE
-    </div>
-    <div class="blue-banner-text">
-      Preserving works of Dr. A. P. J. Abdul Kalam, Tagore, Premchand, R. K. Narayan, and national scientific achievements.
-    </div>
-  </div>
-</div>
-
-<!-- Lumio Stats Grid -->
-<div class="lumio-stats-grid">
-  <div class="lumio-stat-card">
-    <div class="stat-num-row">
-      <div class="stat-big-number">{{ stats.total_titles }}</div>
-      <div class="stat-suffix">titles</div>
-    </div>
-    <div class="stat-label-title">Catalog Titles</div>
-    <div class="stat-subtext">Classified across {{ stats.total_categories }} categories</div>
-  </div>
-
-  <div class="lumio-stat-card">
-    <div class="stat-num-row">
-      <div class="stat-big-number">{{ stats.available_copies }}</div>
-      <div class="stat-suffix">/ {{ stats.total_copies }}</div>
-    </div>
-    <div class="stat-label-title">Available Copies</div>
-    <div class="stat-subtext">{{ stats.borrowed_copies }} copies currently loaned</div>
-  </div>
-
-  <div class="lumio-stat-card">
-    <div class="stat-num-row">
-      <div class="stat-big-number">{{ stats.active_borrows }}</div>
-      <div class="stat-suffix" style="color: {% if stats.overdue_borrows > 0 %}#ef4444{% else %}#10b981{% endif %};">
-        active
-      </div>
-    </div>
-    <div class="stat-label-title">Circulation Loans</div>
-    <div class="stat-subtext">
-      {% if stats.overdue_borrows > 0 %}
-        <span style="color: #ef4444; font-weight: 600;">{{ stats.overdue_borrows }} overdue loans</span>
-      {% else %}
-        All loans within due date
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="lumio-stat-card">
-    <div class="stat-num-row">
-      <div class="stat-big-number">{{ stats.total_members }}</div>
-      <div class="stat-suffix">members</div>
-    </div>
-    <div class="stat-label-title">Registered Patrons</div>
-    <div class="stat-subtext">Supported by {{ stats.total_librarians }} librarians on duty</div>
-  </div>
-</div>
-
-<!-- Lumio Signature Horizontal Row List: Recent Activity -->
-<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: baseline;">
   <div>
-    <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">Recent Circulation Activity</h3>
-    <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time loans and return transactions processed through Nalanda desk</p>
-  </div>
-  <a href="{{ url_for('circulation') }}" style="font-size: 0.88rem; font-weight: 600; color: var(--primary);">
-    View All Borrows &rarr;
-  </a>
-</div>
+    {% for b in stats.recent_borrows %}
+      <div class="activity-row">
+        <!-- Number (001, 002...) -->
+        <div class="activity-seq">{{ b.idx_str }}</div>
 
-<div class="lumio-services-container">
-  {% for b in stats.recent_borrows %}
-    <div class="lumio-service-row">
-      <div class="service-idx">00{{ loop.index }}</div>
-      <div>
-        <div class="service-title">{{ b.book_title }}</div>
-        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
-          Copy #{{ b.copy_id }} &bull; Borrower: <strong>{{ b.member_name }}</strong>
-        </div>
-      </div>
-      <div class="service-desc">
-        <div>Issue: <strong>{{ b.issue_date|format_date }}</strong> &bull; Due: <strong>{{ b.due_date|format_date }}</strong></div>
-        <div style="margin-top: 4px;">
-          {% if b.return_date %}
-            <span class="badge badge-returned">Returned ({{ b.return_date|format_date }})</span>
-            {% if b.fine_amount and b.fine_amount > 0 %}
-              <span class="badge badge-overdue" style="margin-left: 6px;">Fine: {{ b.fine_amount|currency }}</span>
-            {% endif %}
+        <!-- Book Title in Serif -->
+        <div>
+          {% if b.book_id %}
+            <a href="{{ url_for('book_detail', book_id=b.book_id) }}" class="activity-book-title">
+              {{ b.book_title }}
+            </a>
           {% else %}
-            <span class="badge badge-borrowed">Currently Loaned</span>
+            <span class="activity-book-title">{{ b.book_title }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Copy Number & Borrower Name -->
+        <div class="activity-borrower-copy">
+          <div>Copy #{{ b.copy_id }}</div>
+          <div style="font-weight: 600; color: var(--text-main);">{{ b.member_name }}</div>
+        </div>
+
+        <!-- Issue & Due Dates -->
+        <div class="activity-dates">
+          <div>Issued: {{ b.issue_date|format_date }}</div>
+          <div style="{% if b.is_overdue %}color: var(--maroon); font-weight: 600;{% endif %}">
+            Due: {{ b.due_date|format_date }}
+          </div>
+        </div>
+
+        <!-- Status Tags (Tan, Gold, Pink/Red) -->
+        <div>
+          {% if b.return_date %}
+            <span class="tag-tan">Returned {{ b.return_date|format_date }}</span>
+            {% if b.fine_amount and b.fine_amount > 0 %}
+              <span class="tag-pink" style="margin-left: 4px;">Fine {{ b.fine_amount|currency }}</span>
+            {% endif %}
+          {% elif b.is_overdue %}
+            <span class="tag-pink">Overdue ({{ b.days_overdue }}d)</span>
+            <span class="tag-pink" style="margin-top: 4px;">Fine {{ b.est_fine|currency }}</span>
+          {% else %}
+            <span class="tag-gold">Currently Issued</span>
+          {% endif %}
+        </div>
+
+        <!-- Right button: a tick if returned, an arrow if issued (turns maroon on hover) -->
+        <div style="text-align: right;">
+          {% if b.return_date %}
+            <span class="btn-action-tick" title="Returned and settled">&#10003;</span>
+          {% else %}
+            <button type="button" class="btn-action-arrow" title="Process Return"
+                    onclick="prepareReturnModal('{{ b.borrow_id }}', '{{ b.member_name|replace('\'', '\\\'') }}', '{{ b.book_title|replace('\'', '\\\'') }}', '{{ b.copy_id }}', '{{ b.due_date }}')">
+              &rarr;
+            </button>
           {% endif %}
         </div>
       </div>
-      <div>
-        {% if not b.return_date %}
-          <button class="service-arrow-btn" title="Process Return" onclick="prepareReturnModal('{{ b.borrow_id }}', '{{ b.member_name }}', '{{ b.book_title }}', '{{ b.copy_id }}', '{{ b.due_date }}')">
-            &rarr;
-          </button>
-        {% else %}
-          <div class="service-arrow-btn" style="opacity: 0.4;" title="Completed">&check;</div>
-        {% endif %}
+    {% else %}
+      <div style="padding: 36px; text-align: center; color: var(--text-muted);">
+        No recent circulation activity recorded in database.
       </div>
-    </div>
-  {% else %}
-    <div style="padding: 32px; text-align: center; color: var(--text-muted);">
-      No recent circulation records found.
-    </div>
-  {% endfor %}
-</div>
+    {% endfor %}
+  </div>
+</section>
 
-<!-- Return Book Modal -->
+<!-- Return Book Window ("Process Book Return (INR ₹)") -->
 <div class="modal-overlay" id="returnBookModal">
   <div class="modal-window">
     <div class="modal-header">
       <h3>Process Book Return (INR ₹)</h3>
-      <button class="modal-close-btn" onclick="closeModal('returnBookModal')">✕</button>
+      <button class="modal-close-btn" onclick="closeModal('returnBookModal')" title="Close">&times;</button>
     </div>
     <form action="{{ url_for('return_book') }}" method="POST">
       <input type="hidden" name="borrow_id" id="returnBorrowId">
       <div class="modal-body">
-        <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); padding: 14px; border-radius: var(--radius-md); margin-bottom: 18px; font-size: 0.88rem;" id="returnModalInfo">
+        <!-- Summary of the book, borrower and due date -->
+        <div style="background-color: var(--bg-card-alt); border: 1px solid var(--border-tan); padding: 14px 16px; border-radius: var(--radius-xs); margin-bottom: 18px; font-size: 0.94rem;" id="returnModalInfo">
           Loading loan details...
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Return Date</label>
+            <label class="form-label">RETURN DATE</label>
             <input type="date" name="return_date" id="returnDateInput" class="form-control" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Fine Amount (₹)</label>
+            <label class="form-label">FINE AMOUNT (₹)</label>
             <input type="number" step="1.00" min="0" name="fine_amount" id="fineAmountInput" class="form-control" value="0.00">
           </div>
         </div>
-        <div style="font-size: 0.8rem; margin-top: -8px; margin-bottom: 14px;" id="fineCalculationNote">
-          Late fee policy: ₹5.00 per overdue day.
+
+        <!-- Green note when book is returned on time, or pink overdue note -->
+        <div id="fineCalculationNote" style="font-size: 0.88rem; padding: 8px 12px; border-radius: var(--radius-xs); background-color: var(--forest-green-light); border: 1px solid var(--forest-green-border); color: var(--forest-green-text); margin-top: 4px;">
+          Returned on or before due date. No late fine applies (₹0.00).
         </div>
       </div>
       <div class="modal-footer">

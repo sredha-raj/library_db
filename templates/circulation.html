@@ -1,25 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}Circulation & Borrow Management{% endblock %}
+{% block title %}Circulation &amp; Borrowing Desk | Nalanda Central Library{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div class="page-header-text">
-    <h2>Circulation & Borrowing Desk</h2>
-    <p>Track loans, due dates, returns, and overdue fine assessments in Indian Rupees (₹).</p>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-family: var(--font-serif-heading); font-size: 2.2rem; font-weight: 700; color: var(--maroon);">Circulation &amp; Borrowing Desk</h1>
+    <p style="font-size: 0.96rem; color: var(--text-muted); margin-top: 4px;">Track loans, due dates, returns, and overdue fine assessments in Indian Rupees (₹).</p>
   </div>
-  <div class="page-header-actions">
-    <button class="btn btn-emerald" onclick="openModal('issueBookModal')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
+  <div>
+    <!-- Forest Green "Issue Book Copy" Button -->
+    <button class="btn btn-forest-green" onclick="openModal('issueBookDeskModal')">
       Issue Book Copy
     </button>
   </div>
 </div>
 
-<!-- Circulation Status Tabs -->
-<div class="tabs-nav" style="margin-bottom: 20px;">
+<!-- Tabs: All Transactions, Active Loans, Overdue Loans, Returned History -->
+<div class="tabs-nav">
   <a href="{{ url_for('circulation', status='all') }}" class="tab-btn {% if current_status == 'all' %}active{% endif %}">
     All Transactions
   </a>
@@ -34,128 +31,129 @@
   </a>
 </div>
 
-<!-- Borrows Table -->
-<div class="card">
-  <div class="card-body" style="padding: 0;">
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
+<!-- Circulation Table with exact 9 requested columns -->
+<div class="card-cream">
+  <div style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">Borrow ID</th>
+          <th>Book &amp; Copy</th>
+          <th>Member</th>
+          <th>Shelf Location</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Return Date</th>
+          <th>Status &amp; Fines</th>
+          <th style="text-align: right; width: 110px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in borrows %}
           <tr>
-            <th>Borrow ID</th>
-            <th>Book & Copy</th>
-            <th>Member</th>
-            <th>Shelf Location</th>
-            <th>Issue Date</th>
-            <th>Due Date</th>
-            <th>Return Date</th>
-            <th>Status & Fines (₹)</th>
-            <th>Actions</th>
+            <td><strong>#{{ "%03d"|format(b.borrow_id) }}</strong></td>
+            <td>
+              <a href="{{ url_for('book_detail', book_id=b.book_id) }}" style="font-family: var(--font-serif-heading); font-size: 1.15rem; font-weight: 700; color: var(--maroon);">
+                {{ b.book_title }}
+              </a>
+              <div style="font-size: 0.84rem; color: var(--text-muted);">
+                Copy #{{ b.copy_id }} {% if b.ISBN %}| ISBN: {{ b.ISBN }}{% endif %}
+              </div>
+            </td>
+            <td>
+              <a href="{{ url_for('member_detail', member_id=b.member_id) }}" style="font-weight: 600; color: var(--text-main);">
+                {{ b.member_name }}
+              </a>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                {{ b.member_phone or b.member_email or 'No contact' }}
+              </div>
+            </td>
+            <td>
+              {% if b.floor %}
+                <span>{{ b.floor }} &bull; {{ b.section }}</span>
+              {% else %}
+                <span style="color: var(--text-dim);">General Stack</span>
+              {% endif %}
+            </td>
+            <td>{{ b.issue_date|format_date }}</td>
+            <td>
+              <span style="{% if b.is_overdue %}color: var(--maroon); font-weight: 700;{% endif %}">
+                {{ b.due_date|format_date }}
+              </span>
+            </td>
+            <td>
+              {% if b.return_date %}
+                <span>{{ b.return_date|format_date }}</span>
+              {% else %}
+                <span style="color: var(--text-dim); font-style: italic;">Currently Out</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if b.return_date %}
+                <span class="tag-tan">Returned {{ b.return_date|format_date }}</span>
+                {% if b.fine_amount and b.fine_amount > 0 %}
+                  <div style="margin-top: 4px;">
+                    <span class="tag-pink">Fine {{ b.fine_amount|currency }}</span>
+                  </div>
+                {% endif %}
+              {% elif b.is_overdue %}
+                <span class="tag-pink">Overdue ({{ b.days_overdue }}d)</span>
+                <div style="margin-top: 4px;">
+                  <span class="tag-pink">Fine {{ b.est_fine|currency }}</span>
+                </div>
+              {% else %}
+                <span class="tag-gold">Currently Issued</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; align-items: center; gap: 8px;">
+                {% if not b.return_date %}
+                  <button type="button" class="btn-action-arrow" title="Return Book"
+                          onclick="prepareReturnModal('{{ b.borrow_id }}', '{{ b.member_name|replace('\'', '\\\'') }}', '{{ b.book_title|replace('\'', '\\\'') }}', '{{ b.copy_id }}', '{{ b.due_date }}')">
+                    &rarr;
+                  </button>
+                {% endif %}
+                <!-- Red × button for Actions -->
+                <form action="{{ url_for('delete_borrow', borrow_id=b.borrow_id) }}" method="POST"
+                      onsubmit="return confirm('Delete borrow record #{{ b.borrow_id }}? Copy availability will be restored.');" style="display:inline;">
+                  <button type="submit" class="btn-delete-x" title="Delete borrow record">&times;</button>
+                </form>
+              </div>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for b in borrows %}
-            <tr>
-              <td><strong>#{{ b.borrow_id }}</strong></td>
-              <td>
-                <a href="{{ url_for('book_detail', book_id=b.book_id) }}" style="font-weight: 600; color: #fff;">
-                  {{ b.book_title }}
-                </a>
-                <div style="font-size: 0.75rem; color: var(--text-dim);">
-                  Copy #{{ b.copy_id }} &bull; ISBN: {{ b.ISBN or 'N/A' }}
-                </div>
-              </td>
-              <td>
-                <a href="{{ url_for('member_detail', member_id=b.member_id) }}" style="color: var(--accent-sky); font-weight: 500;">
-                  {{ b.member_name }}
-                </a>
-                <div style="font-size: 0.72rem; color: var(--text-dim);">
-                  {{ b.member_phone or b.member_email or 'No contact info' }}
-                </div>
-              </td>
-              <td>
-                {% if b.floor %}
-                  <span style="font-size: 0.8rem; color: var(--text-muted);">{{ b.floor }} &bull; {{ b.section }}</span>
-                {% else %}
-                  <span style="color: var(--text-dim); font-size: 0.8rem;">—</span>
-                {% endif %}
-              </td>
-              <td>{{ b.issue_date|format_date }}</td>
-              <td>
-                <span style="{% if b.is_overdue %}color: #fb7185; font-weight: 600;{% endif %}">
-                  {{ b.due_date|format_date }}
-                </span>
-              </td>
-              <td>
-                {% if b.return_date %}
-                  {{ b.return_date|format_date }}
-                {% else %}
-                  <span style="color: var(--text-dim);">Pending</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if b.return_date %}
-                  <span class="badge badge-returned">Returned</span>
-                  {% if b.fine_amount and b.fine_amount > 0 %}
-                    <span style="display: block; font-size: 0.72rem; color: var(--accent-rose); margin-top: 2px;">
-                      Fine paid: {{ b.fine_amount|currency }}
-                    </span>
-                  {% endif %}
-                {% elif b.is_overdue %}
-                  <span class="badge badge-overdue">{{ b.days_overdue }}d Overdue</span>
-                  <span style="display: block; font-size: 0.72rem; color: var(--accent-rose); font-weight: 600; margin-top: 2px;">
-                    Est. Fine: {{ b.est_fine|currency }}
-                  </span>
-                {% else %}
-                  <span class="badge badge-borrowed">Active Loan</span>
-                {% endif %}
-              </td>
-              <td>
-                <div style="display: flex; gap: 6px; align-items: center;">
-                  {% if not b.return_date %}
-                    <button class="btn btn-emerald btn-sm" onclick="prepareReturnModal('{{ b.borrow_id }}', '{{ b.member_name }}', '{{ b.book_title }}', '{{ b.copy_id }}', '{{ b.due_date }}')">
-                      Return
-                    </button>
-                  {% endif %}
-                  <form action="{{ url_for('delete_borrow', borrow_id=b.borrow_id) }}" method="POST" onsubmit="return confirm('Delete borrow record #{{ b.borrow_id }}? (This will cancel the record and restore copy availability if active)');" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm" title="Delete record">✕</button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 40px;">
-                No borrow records found for the selected filter.
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              No circulation records found for this filter tab.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- Issue Book Modal -->
-<div class="modal-overlay" id="issueBookModal">
+<!-- Desk Issue Book Modal -->
+<div class="modal-overlay" id="issueBookDeskModal">
   <div class="modal-window">
     <div class="modal-header">
       <h3>Issue a Book Copy</h3>
-      <button class="modal-close-btn" onclick="closeModal('issueBookModal')">✕</button>
+      <button class="modal-close-btn" onclick="closeModal('issueBookDeskModal')" title="Close">&times;</button>
     </div>
     <form action="{{ url_for('issue_book') }}" method="POST">
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Member *</label>
+          <label class="form-label">SELECT REGISTERED PATRON *</label>
           <select name="member_id" class="form-control" required>
             <option value="">-- Choose Member --</option>
             {% for m in members %}
-              <option value="{{ m.member_id }}">{{ m.name }} (ID: #{{ m.member_id }}) - {{ m.email or m.phone }}</option>
+              <option value="{{ m.member_id }}">{{ m.name }} (ID #{{ m.member_id }}) - {{ m.email or m.phone }}</option>
             {% endfor %}
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Available Book Copy *</label>
+          <label class="form-label">SELECT AVAILABLE BOOK COPY *</label>
           <select name="copy_id" class="form-control" required>
             <option value="">-- Choose Available Copy --</option>
             {% for c in available_copies %}
@@ -168,56 +166,71 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Issue Date</label>
-            <input type="date" name="issue_date" class="form-control" value="{{ today_str }}">
+            <label class="form-label">ISSUE DATE</label>
+            <input type="date" name="issue_date" class="form-control" id="deskIssueDate" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Due Date *</label>
-            <input type="date" name="due_date" class="form-control" value="{{ default_due }}" required>
+            <label class="form-label">DUE DATE</label>
+            <input type="date" name="due_date" class="form-control" id="deskDueDate" required>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('issueBookModal')">Cancel</button>
-        <button type="submit" class="btn btn-emerald">Confirm Issue</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('issueBookDeskModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Issue</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Return Book Modal -->
+<!-- Return Book Window -->
 <div class="modal-overlay" id="returnBookModal">
   <div class="modal-window">
     <div class="modal-header">
       <h3>Process Book Return (INR ₹)</h3>
-      <button class="modal-close-btn" onclick="closeModal('returnBookModal')">✕</button>
+      <button class="modal-close-btn" onclick="closeModal('returnBookModal')" title="Close">&times;</button>
     </div>
     <form action="{{ url_for('return_book') }}" method="POST">
       <input type="hidden" name="borrow_id" id="returnBorrowId">
       <div class="modal-body">
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: 14px; border-radius: var(--radius-md); margin-bottom: 18px; font-size: 0.88rem;" id="returnModalInfo">
+        <div style="background-color: var(--bg-card-alt); border: 1px solid var(--border-tan); padding: 14px 16px; border-radius: var(--radius-xs); margin-bottom: 18px; font-size: 0.94rem;" id="returnModalInfo">
           Loading loan details...
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Return Date</label>
+            <label class="form-label">RETURN DATE</label>
             <input type="date" name="return_date" id="returnDateInput" class="form-control" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Fine Amount (₹)</label>
+            <label class="form-label">FINE AMOUNT (₹)</label>
             <input type="number" step="1.00" min="0" name="fine_amount" id="fineAmountInput" class="form-control" value="0.00">
           </div>
         </div>
-        <div style="font-size: 0.8rem; margin-top: -8px; margin-bottom: 14px;" id="fineCalculationNote">
-          Late fee policy: ₹5.00 per overdue day.
+
+        <div id="fineCalculationNote" style="font-size: 0.88rem; padding: 8px 12px; border-radius: var(--radius-xs); background-color: var(--forest-green-light); border: 1px solid var(--forest-green-border); color: var(--forest-green-text); margin-top: 4px;">
+          Returned on or before due date. No late fine applies (₹0.00).
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('returnBookModal')">Cancel</button>
-        <button type="submit" class="btn btn-emerald">Confirm Return</button>
+        <button type="submit" class="btn btn-primary">Confirm Return</button>
       </div>
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const dIssueDate = document.getElementById('deskIssueDate');
+  const dDueDate = document.getElementById('deskDueDate');
+  if (dIssueDate && dDueDate) {
+    const now = new Date();
+    dIssueDate.value = now.toISOString().split('T')[0];
+    const due = new Date();
+    due.setDate(now.getDate() + 14);
+    dDueDate.value = due.toISOString().split('T')[0];
+  }
+</script>
 {% endblock %}

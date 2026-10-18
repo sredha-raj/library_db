@@ -10,8 +10,18 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 import time
 
 @app.context_processor
-def inject_cache_bust():
-    return {'css_version': int(time.time())}
+def inject_global_vars():
+    try:
+        members = db.get_members()
+        available_copies = db.get_available_copies()
+    except Exception:
+        members = []
+        available_copies = []
+    return {
+        'css_version': int(time.time()),
+        'global_members': members,
+        'global_available_copies': available_copies
+    }
 
 @app.after_request
 def add_header(response):
@@ -28,7 +38,7 @@ db.seed_sample_data(force=False)
 @app.template_filter('format_date')
 def format_date(value):
     if not value:
-        return '—'
+        return 'N/A'
     try:
         dt = datetime.strptime(str(value), "%Y-%m-%d")
         return dt.strftime("%d %b %Y")

@@ -377,10 +377,11 @@ def get_dashboard_stats():
     ]
 
     # Recent activity
-    recent_borrows = [
+    today = datetime.now().date()
+    raw_recent = [
         dict(row) for row in c.execute('''
             SELECT b.borrow_id, b.issue_date, b.due_date, b.return_date, b.fine_amount,
-                   m.name as member_name, bk.title as book_title, bc.copy_id
+                   m.name as member_name, bk.title as book_title, bc.copy_id, bk.book_id
             FROM borrow b
             JOIN member m ON b.member_id = m.member_id
             JOIN book_copy bc ON b.copy_id = bc.copy_id
@@ -389,6 +390,26 @@ def get_dashboard_stats():
             LIMIT 6
         ''').fetchall()
     ]
+    recent_borrows = []
+    for idx, d in enumerate(raw_recent):
+        d['idx_str'] = f"{idx + 1:03d}"
+        due = datetime.strptime(d['due_date'], "%Y-%m-%d").date()
+        if not d['return_date']:
+            if due < today:
+                days_over = (today - due).days
+                d['is_overdue'] = True
+                d['days_overdue'] = days_over
+                d['est_fine'] = max(days_over * 5.0, float(d['fine_amount'] or 0.0))
+            else:
+                d['is_overdue'] = False
+                d['days_overdue'] = 0
+                d['est_fine'] = 0.0
+        else:
+            ret = datetime.strptime(d['return_date'], "%Y-%m-%d").date()
+            d['is_overdue'] = False
+            d['days_overdue'] = max(0, (ret - due).days)
+            d['est_fine'] = float(d['fine_amount'] or 0.0)
+        recent_borrows.append(d)
 
     conn.close()
     return {
