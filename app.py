@@ -5,6 +5,20 @@ import database as db
 
 app = Flask(__name__)
 app.secret_key = 'nalanda-indian-library-secret-key-2026'
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+import time
+
+@app.context_processor
+def inject_cache_bust():
+    return {'css_version': int(time.time())}
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # Initialize database on start
 db.init_db(reset=False)
