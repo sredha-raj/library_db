@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Nalanda Central Library{% endblock %} | Catalog & Circulation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <!-- Lumio Top Navbar -->
+  <header class="lumio-navbar">
+    <div class="navbar-brand-box">
+      <div class="lumio-logo-mark">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="brand-title">Nalanda</a>
+    </div>
+
+    <nav class="navbar-nav-links">
+      <a href="{{ url_for('dashboard') }}" class="nav-item-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        Dashboard
+      </a>
+      <a href="{{ url_for('catalog') }}" class="nav-item-link {% if request.endpoint in ['catalog', 'book_detail'] %}active{% endif %}">
+        Catalog
+      </a>
+      <a href="{{ url_for('circulation') }}" class="nav-item-link {% if request.endpoint == 'circulation' %}active{% endif %}">
+        Circulation
+      </a>
+      <a href="{{ url_for('members') }}" class="nav-item-link {% if request.endpoint in ['members', 'member_detail'] %}active{% endif %}">
+        Members
+      </a>
+      <a href="{{ url_for('librarians') }}" class="nav-item-link {% if request.endpoint in ['librarians', 'librarian_detail'] %}active{% endif %}">
+        Librarians
+      </a>
+      <a href="{{ url_for('inventory') }}" class="nav-item-link {% if request.endpoint == 'inventory' %}active{% endif %}">
+        Shelves & Copies
+      </a>
+      <a href="{{ url_for('metadata') }}" class="nav-item-link {% if request.endpoint == 'metadata' %}active{% endif %}">
+        Publishers & Authors
+      </a>
+      <a href="{{ url_for('schema') }}" class="nav-item-link {% if request.endpoint == 'schema' %}active{% endif %}">
+        Schema <span class="nav-badge-new">11 Tables</span>
+      </a>
+    </nav>
+
+    <div class="navbar-right-box">
+      <div class="currency-pill">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v12M15 9.5H9a2.5 2.5 0 0 1 0-5h6M9 14.5h6a2.5 2.5 0 0 1 0 5H9"></path>
+        </svg>
+        <span>₹ INR</span>
+      </div>
+      <a href="{{ url_for('circulation') }}" class="btn-lumio-cta">
+        Issue Book &nearr;
+      </a>
+    </div>
+  </header>
+
+  <!-- Lumio Page Layout with Left Vertical Rail -->
+  <div class="lumio-page-layout">
+    <aside class="lumio-vertical-rail">
+      <div class="vertical-text">
+        NALANDA CENTRAL LIBRARY &bull; CATALOG & CIRCULATION &bull; ESTD 1948
+      </div>
+    </aside>
+
+    <main class="lumio-main-body">
+      <div class="lumio-container">
+        <!-- Flash notifications -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                  <span>{{ message }}</span>
+                  <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

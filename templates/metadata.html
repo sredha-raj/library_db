@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% block title %}Publishers, Categories & Authors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h2>Catalog Metadata (publisher, category, author)</h2>
+    <p>Manage publishing houses, literary classifications, and registered authors with full Create, Update, and Delete control.</p>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn {% if tab == 'categories' %}active{% endif %}" data-tab="tabCategories">
+      Categories ({{ categories|length }})
+    </button>
+    <button class="tab-btn {% if tab == 'publishers' %}active{% endif %}" data-tab="tabPublishers">
+      Publishers ({{ publishers|length }})
+    </button>
+    <button class="tab-btn {% if tab == 'authors' %}active{% endif %}" data-tab="tabAuthors">
+      Authors ({{ authors|length }})
+    </button>
+  </div>
+
+  <!-- Categories Pane -->
+  <div class="tab-pane {% if tab == 'categories' %}active{% endif %}" id="tabCategories">
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+      <!-- Add Form -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Add Category</h3>
+        </div>
+        <form action="{{ url_for('add_category') }}" method="POST">
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Category Name *</label>
+              <input type="text" name="category_name" class="form-control" placeholder="e.g. Indian Philosophy & Yoga" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Category</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Categories Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Existing Categories</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Category Name</th>
+                  <th>Catalog Titles</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in categories %}
+                  <tr>
+                    <td><strong>#{{ c.category_id }}</strong></td>
+                    <td><span style="font-weight: 600; color: #fff;">{{ c.category_name }}</span></td>
+                    <td><span class="badge badge-tag">{{ c.books_count }} books</span></td>
+                    <td>
+                      <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditCategoryModal('{{ c.category_id }}', '{{ c.category_name|replace('\'', '\\\'') }}')">
+                          Edit
+                        </button>
+                        <form action="{{ url_for('delete_category', category_id=c.category_id) }}" method="POST" onsubmit="return confirm('Delete category?');" style="display:inline;">
+                          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Publishers Pane -->
+  <div class="tab-pane {% if tab == 'publishers' %}active{% endif %}" id="tabPublishers">
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+      <!-- Add Publisher Form -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Add Publisher</h3>
+        </div>
+        <form action="{{ url_for('add_publisher') }}" method="POST">
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Publisher Name *</label>
+              <input type="text" name="publisher_name" class="form-control" placeholder="e.g. Penguin Random House India" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="text" name="phone" class="form-control" placeholder="+91-11-2327-8586">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Headquarters / Address</label>
+              <input type="text" name="address" class="form-control" placeholder="Connaught Place, New Delhi 110001">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Add Publisher</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Publishers Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Registered Publishers</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Publisher Name</th>
+                  <th>Contact Info</th>
+                  <th>Titles</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in publishers %}
+                  <tr>
+                    <td><strong>#{{ p.publisher_id }}</strong></td>
+                    <td><span style="font-weight: 600; color: #fff;">{{ p.publisher_name }}</span></td>
+                    <td>
+                      <div>{{ p.phone or '—' }}</div>
+                      <div style="font-size: 0.75rem; color: var(--text-dim);">{{ p.address or '' }}</div>
+                    </td>
+                    <td><span class="badge badge-tag">{{ p.books_count }} books</span></td>
+                    <td>
+                      <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditPublisherModal('{{ p.publisher_id }}', '{{ p.publisher_name|replace('\'', '\\\'') }}', '{{ (p.address or '')|replace('\'', '\\\'') }}', '{{ (p.phone or '')|replace('\'', '\\\'') }}')">
+                          Edit
+                        </button>
+                        <form action="{{ url_for('delete_publisher', publisher_id=p.publisher_id) }}" method="POST" onsubmit="return confirm('Delete publisher?');" style="display:inline;">
+                          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authors Pane -->
+  <div class="tab-pane {% if tab == 'authors' %}active{% endif %}" id="tabAuthors">
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+      <!-- Add Author Form -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Add Author</h3>
+        </div>
+        <form action="{{ url_for('add_author') }}" method="POST">
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Author Name *</label>
+              <input type="text" name="author_name" class="form-control" placeholder="e.g. Dr. A. P. J. Abdul Kalam" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nationality</label>
+              <input type="text" name="nationality" class="form-control" placeholder="Indian" value="Indian">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Register Author</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Authors Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Registered Authors</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Author Name</th>
+                  <th>Nationality</th>
+                  <th>Books in Catalog</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in authors %}
+                  <tr>
+                    <td><strong>#{{ a.author_id }}</strong></td>
+                    <td><span style="font-weight: 600; color: #fff;">{{ a.author_name }}</span></td>
+                    <td>{{ a.nationality or '—' }}</td>
+                    <td><span class="badge badge-tag">{{ a.books_count }} books</span></td>
+                    <td>
+                      <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditAuthorModal('{{ a.author_id }}', '{{ a.author_name|replace('\'', '\\\'') }}', '{{ (a.nationality or '')|replace('\'', '\\\'') }}')">
+                          Edit
+                        </button>
+                        <form action="{{ url_for('delete_author', author_id=a.author_id) }}" method="POST" onsubmit="return confirm('Delete author?');" style="display:inline;">
+                          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal-overlay" id="editCategoryModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Edit Category</h3>
+      <button class="modal-close-btn" onclick="closeModal('editCategoryModal')">✕</button>
+    </div>
+    <form id="editCategoryForm" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Category Name *</label>
+          <input type="text" name="category_name" id="editCategoryName" class="form-control" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editCategoryModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Publisher Modal -->
+<div class="modal-overlay" id="editPublisherModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Edit Publisher</h3>
+      <button class="modal-close-btn" onclick="closeModal('editPublisherModal')">✕</button>
+    </div>
+    <form id="editPublisherForm" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Publisher Name *</label>
+          <input type="text" name="publisher_name" id="editPublisherName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="text" name="phone" id="editPublisherPhone" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Headquarters Address</label>
+          <input type="text" name="address" id="editPublisherAddress" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editPublisherModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Author Modal -->
+<div class="modal-overlay" id="editAuthorModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Edit Author</h3>
+      <button class="modal-close-btn" onclick="closeModal('editAuthorModal')">✕</button>
+    </div>
+    <form id="editAuthorForm" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Author Name *</label>
+          <input type="text" name="author_name" id="editAuthorName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nationality</label>
+          <input type="text" name="nationality" id="editAuthorNationality" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editAuthorModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Schema Architecture & SQL Console | Nalanda Library{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.03em;">Relational Schema & Live SQL Console</h1>
+    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Inspect all 11 relational SQLite3 tables, foreign key constraints, and execute live queries in real time.</p>
+  </div>
+  <div>
+    <button class="btn btn-secondary" id="btnResetDatabase">
+      Reset & Re-seed Data
+    </button>
+  </div>
+</div>
+
+<!-- ER Schema Grid of All 11 Tables -->
+<div style="margin-bottom: 32px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+    <h3 style="font-size: 1.25rem; color: var(--text-main); font-weight: 800;">Entity Relationship Cards (11 Tables)</h3>
+    <span style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">PRAGMA foreign_keys = ON;</span>
+  </div>
+
+  <div class="schema-grid">
+    {% for tbl_name, info in schema_info.items() %}
+      <div class="schema-table-card">
+        <div class="schema-table-header">
+          <div class="schema-table-name">
+            {{ tbl_name }}
+          </div>
+          <span class="badge badge-tag">{{ info.row_count }} rows</span>
+        </div>
+
+        <ul class="schema-column-list">
+          {% for col in info.columns %}
+            <li class="schema-column-item">
+              <div>
+                {% if col.pk %}
+                  <span class="schema-pk" title="Primary Key">[PK]</span>
+                {% endif %}
+                {% set matching_fk = info.foreign_keys|selectattr('from', 'equalto', col.name)|list %}
+                {% if matching_fk %}
+                  <span class="schema-fk" title="Foreign Key -> {{ matching_fk[0].table }}.{{ matching_fk[0].to }}">[FK]</span>
+                {% endif %}
+                <span style="color: var(--text-main); font-weight: 600;">{{ col.name }}</span>
+              </div>
+              <span style="color: var(--text-dim); font-size: 0.72rem;">{{ col.type }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Interactive SQL Runner Console -->
+<div class="sql-console-box">
+  <div class="sql-console-header">
+    <div style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4 17 10 11 4 5"></polyline>
+        <line x1="12" y1="19" x2="20" y2="19"></line>
+      </svg>
+      Live SQL Query Runner (SQLite3 Engine)
+    </div>
+    <button class="btn btn-primary btn-sm" id="btnRunQuery">Run SQL &nearr;</button>
+  </div>
+
+  <div class="sql-editor">
+    <textarea id="sqlQueryInput" spellcheck="false" placeholder="Write any SQL SELECT query here...">SELECT b.book_id, b.title, p.publisher_name, c.category_name, COUNT(bc.copy_id) as total_copies
+FROM book b
+LEFT JOIN publisher p ON b.publisher_id = p.publisher_id
+LEFT JOIN category c ON b.category_id = c.category_id
+LEFT JOIN book_copy bc ON b.book_id = bc.book_id
+GROUP BY b.book_id
+ORDER BY total_copies DESC;</textarea>
+  </div>
+
+  <div class="sample-queries">
+    <span style="font-size: 0.75rem; color: #94a3b8; align-self: center;">Quick Queries:</span>
+    <button type="button" class="query-chip" data-sql="SELECT br.borrow_id, m.name, bk.title, br.due_date, br.fine_amount FROM borrow br JOIN member m ON br.member_id = m.member_id JOIN book_copy bc ON br.copy_id = bc.copy_id JOIN book bk ON bc.book_id = bk.book_id WHERE br.return_date IS NULL;">Active Loans</button>
+    <button type="button" class="query-chip" data-sql="SELECT s.floor, s.section, COUNT(bc.copy_id) as copies_stored FROM shelf s LEFT JOIN book_copy bc ON s.shelf_id = bc.shelf_id GROUP BY s.shelf_id;">Shelf Distribution</button>
+    <button type="button" class="query-chip" data-sql="SELECT l.name as librarian, COUNT(m.copy_id) as managed_copies FROM librarian l LEFT JOIN manages m ON l.librarian_id = m.librarian_id GROUP BY l.librarian_id;">Librarian Responsibilities</button>
+    <button type="button" class="query-chip" data-sql="SELECT a.author_name, a.nationality, COUNT(ba.book_id) as titles_authored FROM author a LEFT JOIN book_author ba ON a.author_id = ba.author_id GROUP BY a.author_id;">Author Publications</button>
+  </div>
+
+  <div id="queryResultsBox" style="padding: 20px; background: #ffffff; color: var(--text-main); min-height: 120px;">
+    <div style="color: var(--text-muted); font-size: 0.85rem;">Click "Run SQL" or choose a Quick Query above to execute against the active SQLite3 database.</div>
+  </div>
+</div>
+{% endblock %}

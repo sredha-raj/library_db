@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Librarians & Staff | Nalanda Library{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.03em;">Librarians & Staff (librarian & manages)</h1>
+    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Manage library personnel, desk officers, and their assigned physical copy custody.</p>
+  </div>
+  <div>
+    <button class="btn btn-primary" onclick="openModal('addLibrarianModal')">
+      + Add Librarian
+    </button>
+  </div>
+</div>
+
+<div class="lumio-card">
+  <div style="padding: 0; overflow-x: auto;">
+    <table class="lumio-table">
+      <thead>
+        <tr>
+          <th>Librarian ID</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Managed Copies (manages)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in librarians %}
+          <tr>
+            <td><strong>#{{ l.librarian_id }}</strong></td>
+            <td>
+              <a href="{{ url_for('librarian_detail', librarian_id=l.librarian_id) }}" style="font-weight: 700; color: var(--primary);">
+                {{ l.name }}
+              </a>
+            </td>
+            <td>{{ l.phone or '—' }}</td>
+            <td>{{ l.email or '—' }}</td>
+            <td>
+              <span class="badge badge-tag">{{ l.managed_copies_count }} copies</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('librarian_detail', librarian_id=l.librarian_id) }}" class="btn btn-secondary btn-sm">
+                  View & Assign
+                </a>
+                <form action="{{ url_for('delete_librarian', librarian_id=l.librarian_id) }}" method="POST" onsubmit="return confirm('Delete this librarian?');" style="display:inline;">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 36px;">
+              No librarians registered yet. Click "+ Add Librarian" above.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Librarian Modal -->
+<div class="modal-overlay" id="addLibrarianModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Add New Librarian</h3>
+      <button class="modal-close-btn" onclick="closeModal('addLibrarianModal')">✕</button>
+    </div>
+    <form action="{{ url_for('add_librarian') }}" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" name="name" class="form-control" placeholder="Dr. Rameshwar Shastri" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="text" name="phone" class="form-control" placeholder="+91-98112-40192">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" name="email" class="form-control" placeholder="r.shastri@nalanda.library.in">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addLibrarianModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Librarian</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

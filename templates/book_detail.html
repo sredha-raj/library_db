@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% block title %}{{ book.title }} - Nalanda Library{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <a href="{{ url_for('catalog') }}" style="color: var(--text-muted); font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; font-weight: 500;">
+    &larr; Back to Catalog
+  </a>
+</div>
+
+<!-- Header / Summary Card -->
+<div class="lumio-card" style="margin-bottom: 32px;">
+  <div style="padding: 36px 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <span class="badge badge-tag">{{ book.category_name or 'Uncategorized' }}</span>
+          {% if book.year_ %}
+            <span class="badge badge-returned">Year {{ book.year_ }}</span>
+          {% endif %}
+          {% if book.edition %}
+            <span class="badge badge-returned">{{ book.edition }}</span>
+          {% endif %}
+        </div>
+
+        <h1 style="font-size: 2.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 12px; letter-spacing: -0.03em;">{{ book.title }}</h1>
+
+        <!-- Authors list -->
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+          <span style="color: var(--text-muted); font-size: 0.9rem;">Authors:</span>
+          {% for a in book.authors %}
+            <span style="font-weight: 700; color: var(--primary); font-size: 1rem;">
+              {{ a.author_name }}
+              {% if a.nationality %}
+                <small style="color: var(--text-dim); font-weight: 500;">({{ a.nationality }})</small>
+              {% endif %}
+            </span>
+          {% else %}
+            <span style="color: var(--text-dim);">No authors assigned</span>
+          {% endfor %}
+        </div>
+
+        <!-- Publisher & ISBN -->
+        <div style="display: flex; gap: 32px; font-size: 0.88rem; color: var(--text-body); flex-wrap: wrap;">
+          <div>
+            <strong style="color: var(--text-main);">ISBN:</strong>
+            <span style="font-family: var(--font-mono); margin-left: 4px;">{{ book.ISBN or 'None' }}</span>
+          </div>
+          <div>
+            <strong style="color: var(--text-main);">Publisher:</strong>
+            <span style="margin-left: 4px;">{{ book.publisher_name or 'Independent' }}</span>
+            {% if book.publisher_phone %}
+              <small style="color: var(--text-muted);">({{ book.publisher_phone }})</small>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('editBookModal')">
+          Edit Details
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addCopyModal')">
+          + Add Copy
+        </button>
+        <form action="{{ url_for('delete_book', book_id=book.book_id) }}" method="POST" onsubmit="return confirm('Delete this book and all its physical copies?');" style="display:inline;">
+          <button type="submit" class="btn btn-danger btn-sm">
+            Delete Title
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs: Inventory Copies vs Circulation History -->
+<div class="tabs-container">
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-tab="tabCopies">
+      Physical Inventory Copies ({{ book.copies|length }})
+    </button>
+    <button class="tab-btn" data-tab="tabHistory">
+      Borrow History Timeline ({{ book.history|length }})
+    </button>
+  </div>
+
+  <!-- Copies Tab -->
+  <div class="tab-pane active" id="tabCopies">
+    <div class="lumio-card">
+      <div class="lumio-card-header">
+        <h3>Physical Copies Breakdown (book_copy, shelf, manages)</h3>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addCopyModal')">+ Add Copy</button>
+      </div>
+      <div style="padding: 0; overflow-x: auto;">
+        <table class="lumio-table">
+          <thead>
+            <tr>
+              <th>Copy ID</th>
+              <th>Location / Shelf</th>
+              <th>Status</th>
+              <th>Managing Librarian (manages)</th>
+              <th>Current Status / Borrower</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in book.copies %}
+              <tr>
+                <td><strong>#{{ c.copy_id }}</strong></td>
+                <td>
+                  {% if c.floor %}
+                    <strong>{{ c.floor }}</strong> &bull; <span style="color: var(--text-body);">{{ c.section }}</span>
+                  {% else %}
+                    <span style="color: var(--text-dim);">No shelf assigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.status == 'Available' %}
+                    <span class="badge badge-available">Available</span>
+                  {% elif c.status == 'Borrowed' %}
+                    <span class="badge badge-borrowed">Borrowed</span>
+                  {% else %}
+                    <span class="badge badge-returned">{{ c.status }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.managers %}
+                    <span style="color: var(--primary); font-weight: 600;">{{ c.managers }}</span>
+                  {% else %}
+                    <span style="color: var(--text-dim);">Unassigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.status == 'Borrowed' and c.current_borrower %}
+                    <span style="font-size: 0.82rem; color: #b45309; font-weight: 500;">
+                      Loaned to <strong>{{ c.current_borrower }}</strong> (Due {{ c.current_due_date|format_date }})
+                    </span>
+                  {% else %}
+                    <span style="color: #059669; font-size: 0.82rem; font-weight: 500;">In Stock & Ready</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display: flex; gap: 8px;">
+                    {% if c.status == 'Available' %}
+                      <button class="btn btn-primary btn-sm" onclick="openDirectIssueModal('{{ c.copy_id }}', '{{ book.title }}')">
+                        Issue Copy
+                      </button>
+                    {% endif %}
+                    <form action="{{ url_for('delete_copy', copy_id=c.copy_id) }}" method="POST" onsubmit="return confirm('Delete copy #{{ c.copy_id }}?');" style="display:inline;">
+                      <input type="hidden" name="redirect_to" value="book_detail">
+                      <input type="hidden" name="book_id" value="{{ book.book_id }}">
+                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 32px;">
+                  No physical copies registered for this title yet. Click "+ Add Copy" above.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div class="tab-pane" id="tabHistory">
+    <div class="lumio-card">
+      <div class="lumio-card-header">
+        <h3>Borrow History for this Title</h3>
+      </div>
+      <div style="padding: 0; overflow-x: auto;">
+        <table class="lumio-table">
+          <thead>
+            <tr>
+              <th>Borrow #</th>
+              <th>Copy ID</th>
+              <th>Member Name</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+              <th>Return Date</th>
+              <th>Fine Paid (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in book.history %}
+              <tr>
+                <td><strong>#{{ h.borrow_id }}</strong></td>
+                <td>Copy #{{ h.copy_id }}</td>
+                <td>
+                  <a href="{{ url_for('member_detail', member_id=h.member_id) }}" style="color: var(--primary); font-weight: 600;">
+                    {{ h.member_name }}
+                  </a>
+                </td>
+                <td>{{ h.issue_date|format_date }}</td>
+                <td>{{ h.due_date|format_date }}</td>
+                <td>
+                  {% if h.return_date %}
+                    <span class="badge badge-returned">{{ h.return_date|format_date }}</span>
+                  {% else %}
+                    <span class="badge badge-borrowed">Active Loan</span>
+                  {% endif %}
+                </td>
+                <td><strong>{{ h.fine_amount|currency }}</strong></td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 32px;">
+                  No borrowing records found for this title.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Book Modal -->
+<div class="modal-overlay" id="editBookModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Edit Book Details</h3>
+      <button class="modal-close-btn" onclick="closeModal('editBookModal')">✕</button>
+    </div>
+    <form action="{{ url_for('edit_book', book_id=book.book_id) }}" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Book Title *</label>
+          <input type="text" name="title" class="form-control" value="{{ book.title }}" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ISBN</label>
+            <input type="text" name="isbn" class="form-control" value="{{ book.ISBN or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Edition</label>
+            <input type="text" name="edition" class="form-control" value="{{ book.edition or '' }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Publication Year</label>
+            <input type="number" name="year" class="form-control" value="{{ book.year_ or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category_id" class="form-control">
+              <option value="">-- Select Category --</option>
+              {% for c in categories %}
+                <option value="{{ c.category_id }}" {% if book.category_id == c.category_id %}selected{% endif %}>{{ c.category_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Publisher</label>
+          <select name="publisher_id" class="form-control">
+            <option value="">-- Select Publisher --</option>
+            {% for p in publishers %}
+              <option value="{{ p.publisher_id }}" {% if book.publisher_id == p.publisher_id %}selected{% endif %}>{{ p.publisher_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Authors</label>
+          <div style="max-height: 120px; overflow-y: auto; background: var(--bg-subtle); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 10px;">
+            {% set book_author_ids = book.authors|map(attribute='author_id')|list %}
+            {% for a in authors %}
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; margin-bottom: 6px; cursor: pointer;">
+                <input type="checkbox" name="author_ids" value="{{ a.author_id }}" {% if a.author_id in book_author_ids %}checked{% endif %}>
+                <span>{{ a.author_name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editBookModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Copy Modal -->
+<div class="modal-overlay" id="addCopyModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Add Physical Copy</h3>
+      <button class="modal-close-btn" onclick="closeModal('addCopyModal')">✕</button>
+    </div>
+    <form action="{{ url_for('add_copy') }}" method="POST">
+      <input type="hidden" name="book_id" value="{{ book.book_id }}">
+      <input type="hidden" name="redirect_to" value="book_detail">
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-body); margin-bottom: 16px;">
+          Registering a new physical copy for <strong>{{ book.title }}</strong>.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Shelf Location</label>
+          <select name="shelf_id" class="form-control">
+            <option value="">-- Select Shelf --</option>
+            {% for s in shelves %}
+              <option value="{{ s.shelf_id }}">{{ s.floor }} - {{ s.section }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Initial Status</label>
+          <select name="status" class="form-control">
+            <option value="Available" selected>Available</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Reserved">Reserved</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Assign Managing Librarian (manages)</label>
+          <select name="librarian_id" class="form-control">
+            <option value="">-- Choose Librarian --</option>
+            {% for l in librarians %}
+              <option value="{{ l.librarian_id }}">{{ l.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addCopyModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Copy</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Direct Issue Modal -->
+<div class="modal-overlay" id="directIssueModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Issue Book Copy</h3>
+      <button class="modal-close-btn" onclick="closeModal('directIssueModal')">✕</button>
+    </div>
+    <form action="{{ url_for('issue_book') }}" method="POST">
+      <input type="hidden" name="copy_id" id="directIssueCopyId">
+      <div class="modal-body">
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;" id="directIssueTitle"></div>
+
+        <div class="form-group">
+          <label class="form-label">Select Registered Member *</label>
+          <select name="member_id" class="form-control" required>
+            <option value="">-- Choose Member --</option>
+            {% for m in members %}
+              <option value="{{ m.member_id }}">{{ m.name }} (ID: #{{ m.member_id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Issue Date</label>
+            <input type="date" name="issue_date" id="directIssueDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Due Date (Default: +14 days) *</label>
+            <input type="date" name="due_date" id="directDueDate" class="form-control" required>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('directIssueModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Issue</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.openDirectIssueModal = function(copyId, title) {
+    document.getElementById('directIssueCopyId').value = copyId;
+    document.getElementById('directIssueTitle').innerHTML = `Issuing <strong>${title}</strong> (Copy #${copyId})`;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14);
+    
+    document.getElementById('directIssueDate').value = today;
+    document.getElementById('directDueDate').value = dueDate.toISOString().split('T')[0];
+    
+    openModal('directIssueModal');
+  };
+</script>
+{% endblock %}

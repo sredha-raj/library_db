@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}{{ member.name }} - Patron Profile{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <a href="{{ url_for('members') }}" style="color: var(--text-muted); font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; font-weight: 500;">
+    &larr; Back to Members
+  </a>
+</div>
+
+<!-- Member Header Card -->
+<div class="lumio-card" style="margin-bottom: 32px;">
+  <div style="padding: 36px 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <span class="badge badge-tag">Patron #{{ member.member_id }}</span>
+          <span class="badge badge-returned">Member since {{ member.membership_date|format_date }}</span>
+        </div>
+        <h1 style="font-size: 2.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 12px; letter-spacing: -0.03em;">{{ member.name }}</h1>
+
+        <div style="display: flex; gap: 32px; font-size: 0.88rem; color: var(--text-body); flex-wrap: wrap;">
+          <div>
+            <strong style="color: var(--text-main);">Phone:</strong>
+            <span style="margin-left: 4px;">{{ member.phone or 'Not provided' }}</span>
+          </div>
+          <div>
+            <strong style="color: var(--text-main);">Email:</strong>
+            <span style="margin-left: 4px;">{{ member.email or 'Not provided' }}</span>
+          </div>
+          <div>
+            <strong style="color: var(--text-main);">Address:</strong>
+            <span style="margin-left: 4px;">{{ member.address or 'Not provided' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('editMemberModal')">
+          Edit Profile
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Borrow History Card -->
+<div class="lumio-card">
+  <div class="lumio-card-header">
+    <h3>
+      Circulation History for {{ member.name }} ({{ member.borrows|length }})
+    </h3>
+  </div>
+  <div style="padding: 0; overflow-x: auto;">
+    <table class="lumio-table">
+      <thead>
+        <tr>
+          <th>Borrow #</th>
+          <th>Book Title</th>
+          <th>Copy ID</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Return Date</th>
+          <th>Fine Amount (₹)</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in member.borrows %}
+          <tr>
+            <td><strong>#{{ b.borrow_id }}</strong></td>
+            <td>
+              <a href="{{ url_for('book_detail', book_id=b.book_id) }}" style="font-weight: 700; color: var(--primary);">
+                {{ b.book_title }}
+              </a>
+            </td>
+            <td>Copy #{{ b.copy_id }}</td>
+            <td>{{ b.issue_date|format_date }}</td>
+            <td>{{ b.due_date|format_date }}</td>
+            <td>
+              {% if b.return_date %}
+                {{ b.return_date|format_date }}
+              {% else %}
+                <span style="color: var(--text-dim);">Active</span>
+              {% endif %}
+            </td>
+            <td><strong>{{ b.fine_amount|currency }}</strong></td>
+            <td>
+              {% if b.return_date %}
+                <span class="badge badge-returned">Returned</span>
+              {% else %}
+                <span class="badge badge-borrowed">Active Loan</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not b.return_date %}
+                <button class="btn btn-primary btn-sm" onclick="prepareReturnModal('{{ b.borrow_id }}', '{{ member.name }}', '{{ b.book_title }}', '{{ b.copy_id }}', '{{ b.due_date }}')">
+                  Return Book
+                </button>
+              {% else %}
+                <span style="color: #059669; font-size: 0.8rem; font-weight: 600;">Completed</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 36px;">
+              No borrow records found for this member.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Member Modal -->
+<div class="modal-overlay" id="editMemberModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Edit Member Information</h3>
+      <button class="modal-close-btn" onclick="closeModal('editMemberModal')">✕</button>
+    </div>
+    <form action="{{ url_for('edit_member', member_id=member.member_id) }}" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" name="name" class="form-control" value="{{ member.name }}" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" name="phone" class="form-control" value="{{ member.phone or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ member.email or '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" name="address" class="form-control" value="{{ member.address or '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Membership Date</label>
+          <input type="date" name="membership_date" class="form-control" value="{{ member.membership_date }}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editMemberModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Return Book Modal -->
+<div class="modal-overlay" id="returnBookModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3>Process Book Return (INR ₹)</h3>
+      <button class="modal-close-btn" onclick="closeModal('returnBookModal')">✕</button>
+    </div>
+    <form action="{{ url_for('return_book') }}" method="POST">
+      <input type="hidden" name="borrow_id" id="returnBorrowId">
+      <div class="modal-body">
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); padding: 14px; border-radius: var(--radius-md); margin-bottom: 18px; font-size: 0.88rem;" id="returnModalInfo">
+          Loading loan details...
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Return Date</label>
+            <input type="date" name="return_date" id="returnDateInput" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fine Amount (₹)</label>
+            <input type="number" step="1.00" min="0" name="fine_amount" id="fineAmountInput" class="form-control" value="0.00">
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; margin-top: -8px; margin-bottom: 14px;" id="fineCalculationNote">
+          Late fee policy: ₹5.00 per overdue day.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('returnBookModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Return</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
